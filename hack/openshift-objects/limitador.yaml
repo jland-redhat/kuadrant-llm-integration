@@ -1,0 +1,10 @@
+# Note the Limitador is created by Kuadrant
+apiVersion: limitador.kuadrant.io/v1alpha1
+kind: Limitador
+metadata:
+  name: limitador
+  namespace: openshift-operators
+spec:
+  image: ghcr.io/nerdalert/limitador
+  version: latest
+  verbosity: 3
