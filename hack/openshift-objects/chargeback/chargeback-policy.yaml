@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: freeuser1-apikey
-  namespace: llm
+  namespace: llm-d
   labels:
     kuadrant.io/auth-secret: "true"
     app: llm-gateway
@@ -20,7 +20,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: freeuser2-apikey
-  namespace: llm
+  namespace: llm-d
   labels:
     kuadrant.io/auth-secret: "true"
     app: llm-gateway
@@ -35,7 +35,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: premiumuser1-apikey
-  namespace: llm
+  namespace: llm-d
   labels:
     kuadrant.io/auth-secret: "true"
     app: llm-gateway
@@ -50,7 +50,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: premiumuser2-apikey
-  namespace: llm
+  namespace: llm-d
   labels:
     kuadrant.io/auth-secret: "true"
     app: llm-gateway
@@ -65,7 +65,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: enterpriseuser1-apikey
-  namespace: llm
+  namespace: llm-d
   labels:
     kuadrant.io/auth-secret: "true"
     app: llm-gateway
@@ -84,7 +84,7 @@ apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: chargeback-auth
-  namespace: llm
+  namespace: llm-d
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -92,7 +92,7 @@ spec:
     name: vllm-gateway
   rules:
     authentication:
-      api-key-users:
+      api-key-users: 
         apiKey:
           allNamespaces: true
           selector:
@@ -128,7 +128,7 @@ apiVersion: kuadrant.io/v1
 kind: RateLimitPolicy
 metadata:
   name: chargeback-limits
-  namespace: llm
+  namespace: llm-d
 spec:
   targetRef:
     group: gateway.networking.k8s.io
