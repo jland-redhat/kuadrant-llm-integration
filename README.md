@@ -18,32 +18,40 @@ The solution leverages:
 
 For detailed architectural information, see the [Kuadrant Architectural Overview](https://docs.kuadrant.io/1.0.x/architecture/docs/design/architectural-overview/).
 
+## llm-d Deployment
+
+> To deploy on llm-d, please see this end to end walkthrough and demo 📖 **[→ Kuadrant with llm-d Integration Demo](llm-d/README.md)**
+
 ## Quick Start
 
 ### Prerequisites
 
 - Kubernetes cluster (1.23+)
-- Helm 3.9+
-- kubectl configured
-- Gateway API CRDs installed
+- [Helm 3.9+](https://helm.sh/docs/intro/install/)
+- kubectl
+- Kustomize – [installation](https://kubectl.docs.kubernetes.io/installation/kustomize/)
+- yq (mikefarah) – [installation](https://github.com/mikefarah/yq?tab=readme-ov-file#install)
+- jq – [download & install guide](https://stedolan.github.io/jq/download/)
 
-### 1. Bootstrap Environment
+### 1. Bootstrap Infra Environment
 
-Begin with 🏁 **[→ Bootstrapping a Kube cluster](./bootstrap/kubernetes-setup/README.md)** to setup the base Kubernetes environment with Gateway API and vLLM.
+For a completely scripted quickstart see **[→ Kuadrant LLM Integration Installer – Quick‑start](./bootstrap-infra/kubernetes-setup/quickstart-installer.md)**.
+
+Begin with 🏁 **[→ Bootstrapping a Kube cluster](./bootstrap-infra/kubernetes-setup/README.md)** to setup the base Kubernetes infra with Gateway API and vLLM.
 
 **Options:**
 
-- **Kind** - included is a fully functional Kind deployment including a vLLM simulator, Istio service mesh and Prometheus monitoring for load balancing across scalable vLLM replicas. See the Kind installation in [Bootstrapping a Kube cluster](./bootstrap/kubernetes-setup/README.md) for instructions.
+- **Kind** - included is a fully functional Kind deployment including a vLLM simulator, Istio service mesh and Prometheus monitoring for load balancing across scalable vLLM replicas. See the Kind installation in [Bootstrapping a Kube cluster](./bootstrap-infra/kubernetes-setup/README.md) for instructions.
 - Bring your own cluster, vanilla Kubernetes, [RHOAI](https://www.redhat.com/en/products/ai/openshift-ai), etc.
-- **llm-d** - This is compatable with a standard llm-d deployment. To bootstrap your llm-d environment, see the [llm-d Quickstart](https://github.com/llm-d/llm-d-deployer/tree/main/quickstart). You may need to modify the namespace user here from `llm` to `llm-d` as that is the default namespace from the llm-d quickstart (or install llm-d with a matching namespace via the deployer). Istio and GAIE/IGW components are already deployed so no further setup is nessecary. You can jump straight into a demo.
+- **llm-d** - See 🏁 **[→ Deploying Kuadrant on llm-d Quickstart](./llm-d/README.md)**
 
 ### 2. Install Kuadrant
 
-Follow the setup guide:
+Follow the setup guide if you already have an existing cluster running:
 
-📖 **[→ Kuadrant Setup Guide](bootstrap/kuadrant-setup/README.md)**
+📖 **[→ Kuadrant Setup Guide](bootstrap-infra/kuadrant-setup/README.md)**
 
-- Lightweight vLLM inference simulation service via the [llm-d](https://github.com/llm-d/llm-d-inference-sim) project.
+- GPU acceleraters are not required as we are deploying a vLLM inference simulator service via the [llm-d](https://github.com/llm-d/llm-d-inference-sim) project. Swap out images to use vLLM or use the llm-d project option above for true end to end inference validation.
 
 ### 3. Choose Your Demo
 
@@ -101,71 +109,6 @@ Advanced usage tracking with custom Limitador for detailed billing and cost anal
 
 **Potential Use Case:** Enterprise environments requiring detailed usage analytics and billing.
 
-## Key Features
-
-### 🔒 Security & Authentication
-
-- **API Key Authentication**: Secure access control using Kubernetes secrets
-- **Policy-Based Authorization**: Fine-grained access control with OPA
-- **Identity Extraction**: User and group information for personalized policies
-
-### 🎯 Rate Limiting & Quotas
-
-- **Tiered Rate Limiting**: Different limits for different user tiers
-- **Per-User Enforcement**: Independent rate limits per authenticated user
-- **Flexible Time Windows**: Configurable rate limit periods
-- **Grace Period Handling**: Smooth recovery after rate limit resets
-
-### 📊 Monitoring & Observability
-
-- **Prometheus Integration**: Comprehensive metrics collection
-- **User-Level Metrics**: Detailed tracking per user and group
-- **Cost Tracking**: Usage-based billing and chargeback capabilities
-- **Real-Time Dashboards**: Live monitoring and alerting
-
-### 🏗️ Production-Ready Architecture
-
-- **Cloud-Native Design**: Kubernetes-native components
-- **Scalable Infrastructure**: Horizontal scaling for high availability
-- **Standards-Based**: Uses Gateway API for vendor neutrality
-- **Observability-First**: Built-in monitoring and logging
-
-## Namespace Organization
-
-The solution uses a well-organized namespace structure:
-
-- **`llm`**: vLLM inference services and Gateway API resources
-- **`llm-observability`**: Prometheus and monitoring components
-- **`kuadrant-system`**: Kuadrant control plane (Authorino, Limitador, etc.)
-- **`istio-system`**: Istio service mesh components
-
-## Common Use Cases
-
-### 1. API Gateway for ML Services
-
-Deploy secure, scalable access to machine learning inference services with authentication and rate limiting.
-
-### 2. SaaS API Monetization
-
-Implement tiered pricing models with usage-based billing and detailed analytics.
-
-### 3. Multi-Tenant ML Platform
-
-Provide isolated access to ML services for different users and organizations.
-
-### 4. Cost Management & Chargeback
-
-Track and allocate costs based on actual API usage across different users and teams.
-
-## Testing and Validation
-
-Each demo includes comprehensive testing instructions:
-
-- **Unit Tests**: Individual component validation
-- **Integration Tests**: End-to-end workflow testing
-- **Load Testing**: Performance and scalability validation
-- **Metrics Validation**: Monitoring and alerting verification
-
 ## General Troubleshooting for all Demos
 
 Common issues and solutions:
@@ -203,17 +146,68 @@ kubectl get ratelimitpolicy -n llm
 ## Repository Structure
 
 ```text
-├── bootstrap/
-│   |── kubernetes-setup                # Bootstrap a Kind or llm-d cluster or bring your own
-│   └── kuadrant-setup/                 # Kuadrant installation and setup
-├── demos/
-│   ├── authorino-authorization/        # Basic API key authentication demo
-│   ├── limitador-basic-rate-limiting/  # Rate limiting with user tiers
-│   └── kuadrant-chargeback-metrics/    # Advanced usage tracking and billing
-├── kubernetes/
-│   ├── helpers/                        # Helper scripts for setup
-│   └── kustomize/                      # Kubernetes manifests and overlays
-└── README.md
+├── README.md
+├── bootstrap-infra
+│   ├── kuadrant-setup
+│   │   ├── README.md
+│   │   └── llm-d-kuadrant-installation.md
+│   └── kubernetes-setup
+│       ├── README.md
+│       └── quickstart-installer.md
+├── demos
+│   ├── authorino-authorization
+│   │   ├── README.md
+│   │   └── auth-policy.yaml
+│   ├── kuadrant-chargeback-metrics
+│   │   ├── README.md
+│   │   ├── chargeback-policy.yaml
+│   │   └── limitador-servicemonitor.yaml
+│   ├── limitador-basic-rate-limiting
+│   │   ├── README.md
+│   │   └── rate-limit-policy.yaml
+│   └── limitador-token-rate-limiting
+│       └── README.md
+├── kubernetes
+│   ├── helpers
+│   │   └── istio-install.sh
+│   ├── kustomize
+│   │   ├── base
+│   │   │   ├── istio-gateway.yaml
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── vllm-deployment.yaml
+│   │   │   └── vllm-service.yaml
+│   │   ├── overlays
+│   │   │   ├── default
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── namespace.yaml
+│   │   │   ├── dev
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   ├── namespace.yaml
+│   │   │   │   └── vllm-deployment-patch.yaml
+│   │   │   └── prometheus
+│   │   │       ├── kustomization.yaml
+│   │   │       ├── kustomizeconfig.yaml
+│   │   │       └── namespace.yaml
+│   │   └── prometheus
+│   │       ├── kuadrant-servicemonitors.yaml
+│   │       ├── kustomization.yaml
+│   │       ├── llm-observability-servicemonitor.yaml
+│   │       ├── prometheus-config.yaml
+│   │       ├── prometheus-deployment.yaml
+│   │       └── prometheus-rbac.yaml
+│   └── manifests
+│       ├── istio-gateway.yaml
+│       ├── kuadrant-servicemonitors.yaml
+│       ├── prometheus-config.yaml
+│       ├── prometheus-deployment.yaml
+│       ├── prometheus-rbac.yaml
+│       ├── vllm-deployment.yaml
+│       └── vllm-service.yaml
+├── llm-d
+│   ├── README.md
+│   ├── limitador-servicemonitor.yaml
+│   └── llm-d-chargeback-policy.yaml
+└── quickstart-install-infra.sh
 ```
 
 ## References
@@ -230,4 +224,4 @@ kubectl get ratelimitpolicy -n llm
 ## Lets Hack
 
 Feel free to contribute use cases, demos, PRs or reach out for realtime colaboration via the llm-d project [Slack](https://github.com/llm-d/llm-d?tab=readme-ov-file#contribute).
-Begin with the [Kind Setup](bootstrap/kubernetes-setup/README.md) or bring your own k8s cluster and then check out the [Kuadrant Setup](bootstrap/kuadrant-setup/README.md) to prepare your environment, then explore the demos that match your use case!
+Begin with the [Kind Setup](bootstrap-infra/kubernetes-setup/README.md) or bring your own llm-d or k8s cluster and then check out the [Kuadrant Setup](bootstrap-infra/kuadrant-setup/README.md) to prepare your environment, then explore the demos that match your use case!

@@ -7,20 +7,15 @@ This can be deployed on any Kubernetes cluster or Kind since no accelerator is r
 
 ## Base Architecture
 
-- **vLLM Simulator**: A lightweight simulator that provides OpenAI-compatible API endpoints (deployed in `llm` namespace)
+- **vLLM Simulator**: A lightweight simulator that provides OpenAI-compatible API endpoints (deployed in `llm` namespace).
 - **Kubernetes Gateway API**: Standard Gateway resource that provides external access and load balancing between vLLM instances (deployed in `llm` namespace)
 - **HTTPRoute**: Kubernetes Gateway API resource that ensures traffic routes through the Gateway and picks up Envoy filtering in the datapath (deployed in `llm` namespace)
 - **Prometheus**: Monitors and scrapes metrics from all services using Prometheus Operator (deployed in `llm-observability` namespace)
 - **Kustomize**: Provides overlay configuration for different environments
 
-## Prerequisites
-
-- Kubernetes cluster (v1.20+)
-- Helm v3.0+ (for Istio installation)
-- `kubectl` configured to access your cluster
-- `kustomize` (optional, kubectl has built-in kustomize support)
-
 ## Installation
+
+For a scripted install of the following, see the [quickstart installer](./quickstart-installer.md).
 
 ## **Optional**: Setting up a Kind Cluster
 
@@ -69,11 +64,11 @@ cd kuadrant-llm-integration
 # 2. Install Prometheus Operator CRDs
 kubectl apply --server-side --field-manager=my-field-manager -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
 
-# 3. Deploy vLLM components to llm namespace
-kubectl apply -k kubernetes/kustomize/base
+# 3. Deploy vLLM components using default overlay
+kubectl apply -k kubernetes/kustomize/overlays/default
 
-# 4. Deploy Prometheus components to llm-observability namespace
-kubectl apply -k kubernetes/kustomize/prometheus
+# 4. Deploy Prometheus components using prometheus overlay
+kubectl apply -k kubernetes/kustomize/overlays/prometheus
 
 # 5. Wait for pods to be ready
 kubectl wait --for=condition=ready pod -l app=vllm-simulator -n llm --timeout=300s
@@ -128,7 +123,7 @@ curl -X POST http://localhost:8000/v1/completions \
     "model": "Qwen/Qwen3-0.6B",
     "prompt": "Meowdy partner",
     "max_tokens": 50
-  }'
+  }' | jq .
 
 # Test chat completions endpoint
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -137,10 +132,37 @@ curl -X POST http://localhost:8000/v1/chat/completions \
     "model": "Qwen/Qwen3-0.6B",
     "messages": [{"role": "user", "content": "Hello!"}],
     "max_tokens": 50
-  }'
+  }' | jq .
 
 # List available models
 curl http://localhost:8000/v1/models
+```
+
+### Scaling vLLM Instances
+
+To scale your vLLM deployment for load balancing:
+
+```bash
+# Scale to 3 replicas in llm namespace
+kubectl scale deployment vllm-simulator --replicas=3 -n llm
+
+# Check the scaled pods
+kubectl get pods -l app=vllm-simulator -n llm
+```
+
+---
+
+> View the naive load balancing across your vllm replicas by displaying the pod prefix for each unique pod. In another console, send completion requests.
+
+
+```text
+kubectl logs -l app=vllm-simulator -n llm -f --prefix
+[pod/vllm-simulator-646cb8db6c-tgwm6/vllm-simulator] I0713 04:02:50.125728       1 simulator.go:310] "completion request received"
+[pod/vllm-simulator-646cb8db6c-t9jvj/vllm-simulator] I0713 04:02:51.369322       1 simulator.go:310] "completion request received"
+[pod/vllm-simulator-646cb8db6c-5bfg9/vllm-simulator] I0713 04:02:52.233316       1 simulator.go:310] "completion request received"
+[pod/vllm-simulator-646cb8db6c-tgwm6/vllm-simulator] I0713 04:02:53.097022       1 simulator.go:310] "completion request received"
+[pod/vllm-simulator-646cb8db6c-5bfg9/vllm-simulator] I0713 04:02:53.918130       1 simulator.go:310] "completion request received"
+[pod/vllm-simulator-646cb8db6c-t9jvj/vllm-simulator] I0713 04:02:54.780033       1 simulator.go:310] "completion request received"
 ```
 
 ### Validate Prometheus
@@ -156,31 +178,6 @@ Then visit `http://localhost:9090` in your browser or curl the metrics endpoint 
 ```bash
 curl http://localhost:8000/metrics
 ```
-
-### Scaling vLLM Instances
-
-To scale your vLLM deployment for load balancing:
-
-```bash
-# Scale to 3 replicas in llm namespace
-kubectl scale deployment vllm-simulator --replicas=3 -n llm
-
-# Check the scaled pods
-kubectl get pods -l app=vllm-simulator -n llm
-
-# View the naive load balancing across your vllm replicas by displaying the pod name with each log line
-kubectl logs -l app=vllm-simulator -n llm -f --prefix
-```
-
-<details>
-<summary>Example output:</summary>
-[pod/vllm-simulator-646cb8db6c-tgwm6/vllm-simulator] I0713 04:02:50.125728       1 simulator.go:310] "completion request received"
-[pod/vllm-simulator-646cb8db6c-t9jvj/vllm-simulator] I0713 04:02:51.369322       1 simulator.go:310] "completion request received"
-[pod/vllm-simulator-646cb8db6c-5bfg9/vllm-simulator] I0713 04:02:52.233316       1 simulator.go:310] "completion request received"
-[pod/vllm-simulator-646cb8db6c-tgwm6/vllm-simulator] I0713 04:02:53.097022       1 simulator.go:310] "completion request received"
-[pod/vllm-simulator-646cb8db6c-5bfg9/vllm-simulator] I0713 04:02:53.918130       1 simulator.go:310] "completion request received"
-[pod/vllm-simulator-646cb8db6c-t9jvj/vllm-simulator] I0713 04:02:54.780033       1 simulator.go:310] "completion request received"
-</details>
 
 ### Customization
 
@@ -258,7 +255,7 @@ kubectl get pods -n istio-system
 
 ```bash
 # vLLM simulator logs
-kubectl logs -l app=vllm-simulator -n llm 
+kubectl logs -l app=vllm-simulator -n llm
 
 # Prometheus logs
 kubectl logs -l app.kubernetes.io/instance=llm-observability -n llm-observability
@@ -376,7 +373,7 @@ kubectl apply -k kubernetes/kustomize/overlays/dev
 # Test the endpoints
 curl -X POST http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
-  -d '{"model": "gpt-3.5-turbo", "prompt": "Test", "max_tokens": 10}'
+  -d '{"model": "Qwen/Qwen3-0.6B", "prompt": "Test", "max_tokens": 10}' | jq .
 
 # Check metrics
 curl http://localhost:8000/metrics
@@ -409,7 +406,3 @@ For Kind cluster:
 ```bash
 kind delete cluster --name vllm-cluster
 ```
-
-## License
-
-This project is licensed under the MIT License.
