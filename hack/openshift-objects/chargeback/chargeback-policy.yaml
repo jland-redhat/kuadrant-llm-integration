@@ -83,13 +83,13 @@ type: Opaque
 apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
-  name: chargeback-auth
+  name: chargeback-auth-infra-simple-inference
   namespace: llm-d
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
-    name: vllm-gateway
+    name: infra-simple-inference-gateway-istio
   rules:
     authentication:
       api-key-users: 
@@ -127,13 +127,13 @@ spec:
 apiVersion: kuadrant.io/v1
 kind: RateLimitPolicy
 metadata:
-  name: chargeback-limits
+  name: chargeback-limits-infra-simple-inference
   namespace: llm-d
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
-    name: vllm-gateway
+    name: infra-simple-inference-gateway-istio
   limits:
     free-user-requests:
       rates:
